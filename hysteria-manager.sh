@@ -811,11 +811,12 @@ ${BLUE}--- Добавление клиента ---${NC}"
 
     echo "Выберите алгоритм контроля перегрузки:"
     echo "1) Brutal"
-    echo "2) BBR"
+    echo "2) BBR (рекомендуется; стандартный режим Hysteria 2)"
     echo "3) Reno"
     echo "0) Назад"
-    read -p "Выбор [1-3]: " CC_CHOICE
+    read -p "Выбор [1-3, Enter=2]: " CC_CHOICE
     if [[ "$CC_CHOICE" == "0" ]]; then return; fi
+    CC_CHOICE=${CC_CHOICE:-2}
     [[ "$CC_CHOICE" =~ ^[1-3]$ ]] || { echo -e "${RED}Недопустимый выбор алгоритма.${NC}"; return; }
 
     CLIENT_USER="$CLIENT_NAME"
