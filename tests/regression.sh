@@ -19,6 +19,18 @@ SETTINGS_FILE=$test_dir/settings.conf
 CONFIG_FILE=$test_dir/config.yaml
 mkdir -p "$CLIENTS_DIR" "$CLIENT_EXPORT_DIR"
 
+mkdir -p "$test_dir/bin"
+cat > "$test_dir/bin/qrencode" <<'EOF'
+#!/usr/bin/env bash
+cat > "$QR_CAPTURE"
+EOF
+chmod 755 "$test_dir/bin/qrencode"
+QR_CAPTURE="$test_dir/qr-input"
+export QR_CAPTURE
+PATH="$test_dir/bin:$PATH"
+print_qr 'hysteria2://alice:secret@example.com:443/?insecure=1#alice'
+[[ "$(< "$QR_CAPTURE")" == 'hysteria2://alice:secret@example.com:443/?insecure=1#alice' ]]
+
 valid_range 20000-50000
 valid_range 1-65535
 if valid_range 50000-20000 || valid_range 1-65536; then

@@ -866,8 +866,24 @@ ${BLUE}--- Добавление клиента ---${NC}"
     fi
     rm -f "$db_backup"
     echo -e "${GREEN}Конфигурация сохранена в ${CLIENT_EXPORT_DIR}/${CLIENT_NAME}_hysteria.yaml${NC}"
-    printf '%s' "$HY2_LINK" | qrencode -t ANSIUTF8
+    print_qr "$HY2_LINK"
     echo -e "${YELLOW}Ссылка: ${NC}$HY2_LINK"
+}
+
+print_qr() {
+    local data="$1"
+    if [[ -z "$data" ]]; then
+        echo -e "${RED}Не удалось показать QR: ссылка клиента пуста.${NC}" >&2
+        return 1
+    fi
+    if ! command -v qrencode >/dev/null 2>&1; then
+        echo -e "${RED}Не удалось показать QR: команда qrencode не найдена.${NC}" >&2
+        return 1
+    fi
+    if ! printf '%s' "$data" | qrencode -t UTF8; then
+        echo -e "${RED}Не удалось сгенерировать QR-код. Используйте ссылку ниже.${NC}" >&2
+        return 1
+    fi
 }
 
 list_clients() {
@@ -897,7 +913,7 @@ ${BLUE}--- Список клиентов ---${NC}"
         local idx=$((CLIENT_NUM - 1))
         echo ""
         echo -e "Клиент: ${YELLOW}${names[$idx]}${NC}"
-        printf '%s' "${links[$idx]}" | qrencode -t ANSIUTF8
+        print_qr "${links[$idx]}"
         echo -e "Ссылка: ${links[$idx]}"
     else
         echo -e "${RED}Недопустимый выбор.${NC}"
