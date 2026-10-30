@@ -145,6 +145,19 @@ grep -Fxq '  type: gecko' "$CLIENTS_DIR/carol.yaml"
 grep -Fxq '    minPacketSize: 512' "$CLIENTS_DIR/carol.yaml"
 grep -Fxq '    maxPacketSize: 1200' "$CLIENTS_DIR/carol.yaml"
 
+HOP_RANGE=20000-30000 OBFS_ENABLED=false
+write_client_profile dave dave jkl 1 100 50
+grep -Fxq 'server: example.com:443,20000-30000' "$CLIENTS_DIR/dave.yaml"
+grep -Fxq '  up: 50 mbps' "$CLIENTS_DIR/dave.yaml"
+grep -Fxq '  down: 100 mbps' "$CLIENTS_DIR/dave.yaml"
+
+HOP_RANGE=''
+OBFS_ENABLED=true OBFS_TYPE=gecko OBFS_MIN_PKT=1201 OBFS_MAX_PKT=1200
+if (validate_settings >/dev/null 2>&1); then
+    echo 'Ошибка: некорректный диапазон Gecko принят' >&2
+    exit 1
+fi
+
 cat > "$SETTINGS_FILE" <<EOF
 SERVER_ADDR=example.com
 PORT=443
@@ -172,6 +185,10 @@ grep -Fxq 'auth: bob:def' "$CLIENTS_DIR/bob.yaml"
 
 CERT_TYPE=acme DOMAIN=example.com ACME_EMAIL=admin@example.com
 validate_settings
+if (HOP_RANGE=20000-30000 HOP_METHOD=invalid FIREWALL_BACKEND=; validate_settings >/dev/null 2>&1); then
+    echo 'Ошибка: неизвестный метод port hopping принят' >&2
+    exit 1
+fi
 
 cat > "$SETTINGS_FILE" <<'EOF'
 SERVER_ADDR=192.0.2.10
