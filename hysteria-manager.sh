@@ -1049,7 +1049,7 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
             echo -e "
 Текущее состояние: включена=${OBFS_ENABLED:-false}, тип=${OBFS_TYPE:-нет}"
             echo "1) Выключить"
-            echo "2) Включить Salamander"
+            echo "2) Включить Salamander (рекомендуется)"
             echo "3) Включить Gecko"
             read -p "Выбор [1-3]: " OBFS_MOD
             case "$OBFS_MOD" in
