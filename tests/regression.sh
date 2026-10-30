@@ -18,6 +18,8 @@ CLIENT_LIST=$test_dir/clients.list
 SETTINGS_FILE=$test_dir/settings.conf
 CONFIG_FILE=$test_dir/config.yaml
 mkdir -p "$CLIENTS_DIR" "$CLIENT_EXPORT_DIR"
+ensure_state_permissions
+[[ -d "$HYSTERIA_DIR" && -d "$CLIENTS_DIR" && -d "$CLIENT_EXPORT_DIR" ]]
 
 mkdir -p "$test_dir/bin"
 cat > "$test_dir/bin/qrencode" <<'EOF'
@@ -93,6 +95,12 @@ grep -Fxq 'SNI=example.com' "$SETTINGS_FILE"
 [[ "$(read_setting PORT)" == '9443' ]]
 [[ "$(read_setting SNI)" == 'example.com' ]]
 [[ -z "$(read_setting UNKNOWN)" ]]
+settings_write_failed=true
+if write_setting SHOULD_NOT_BE_WRITTEN value; then
+    echo 'Ошибка: запись продолжилась после сбоя настроек' >&2
+    exit 1
+fi
+settings_write_failed=false
 settings_file_before_missing_test="$SETTINGS_FILE"
 SETTINGS_FILE="$test_dir/missing.conf"
 if read_setting PORT; then
@@ -166,6 +174,10 @@ write_client_profile dave dave jkl 1 100 50
 grep -Fxq 'server: example.com:443,20000-30000' "$CLIENTS_DIR/dave.yaml"
 grep -Fxq '  up: 50 mbps' "$CLIENTS_DIR/dave.yaml"
 grep -Fxq '  down: 100 mbps' "$CLIENTS_DIR/dave.yaml"
+
+HOP_RANGE='' OBFS_ENABLED=false
+write_client_profile erin erin mno 3
+grep -Fxq '  type: reno' "$CLIENTS_DIR/erin.yaml"
 
 HOP_RANGE=''
 OBFS_ENABLED=true OBFS_TYPE=gecko OBFS_MIN_PKT=1201 OBFS_MAX_PKT=1200
