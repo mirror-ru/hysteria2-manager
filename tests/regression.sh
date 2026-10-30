@@ -61,7 +61,7 @@ if valid_ipv4 256.0.2.1 || valid_ipv4 192.0.2 || valid_ipv4 192.0.2.1.999; then
     exit 1
 fi
 valid_host example.com
-if valid_host '.example.com' || valid_host 'example..com' || valid_host 'example.com.'; then
+if valid_host '.example.com' || valid_host 'example..com' || valid_host 'example.com.' || valid_host 'example_com' || valid_host 'https://example.com'; then
     echo 'Ошибка: неверный домен принят' >&2
     exit 1
 fi
@@ -178,6 +178,10 @@ grep -Fxq '  down: 100 mbps' "$CLIENTS_DIR/dave.yaml"
 HOP_RANGE='' OBFS_ENABLED=false
 write_client_profile erin erin mno 3
 grep -Fxq '  type: reno' "$CLIENTS_DIR/erin.yaml"
+if write_client_profile frank frank pqr 1 0 50; then
+    echo 'Ошибка: нулевой лимит скорости принят' >&2
+    exit 1
+fi
 
 HOP_RANGE=''
 OBFS_ENABLED=true OBFS_TYPE=gecko OBFS_MIN_PKT=1201 OBFS_MAX_PKT=1200
@@ -229,6 +233,7 @@ CERT_TYPE=self
 EOF
 SNI=stale-value
 load_settings
+validate_settings
 [[ "$SNI" == 'example.com' ]]
 [[ -z "$ACME_EMAIL" ]]
 
