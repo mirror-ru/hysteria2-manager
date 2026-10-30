@@ -83,8 +83,13 @@ printf 'PORT=443\n' > "$SETTINGS_FILE"
 settings_write_failed=false
 write_setting PORT 8443
 write_setting SNI example.com
-grep -Fxq 'PORT=8443' "$SETTINGS_FILE"
+write_setting PORT 9443
+grep -Fxq 'PORT=9443' "$SETTINGS_FILE"
+[[ "$(grep -c '^PORT=' "$SETTINGS_FILE")" == 1 ]]
 grep -Fxq 'SNI=example.com' "$SETTINGS_FILE"
+[[ "$(read_setting PORT)" == '9443' ]]
+[[ "$(read_setting SNI)" == 'example.com' ]]
+[[ -z "$(read_setting UNKNOWN)" ]]
 
 cat > "$test_dir/hashes.txt" <<'EOF'
 ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789  build/hysteria-linux-amd64
@@ -164,5 +169,22 @@ validate_settings
 rebuild_client_profiles
 grep -Fxq 'auth: alice:abc' "$CLIENTS_DIR/alice.yaml"
 grep -Fxq 'auth: bob:def' "$CLIENTS_DIR/bob.yaml"
+
+CERT_TYPE=acme DOMAIN=example.com ACME_EMAIL=admin@example.com
+validate_settings
+
+cat > "$SETTINGS_FILE" <<'EOF'
+SERVER_ADDR=192.0.2.10
+PORT=443
+INSECURE_FLAG=false
+SNI=example.com
+OBFS_ENABLED=false
+MASQ_DOMAIN=example.com
+CERT_TYPE=self
+EOF
+SNI=stale-value
+load_settings
+[[ "$SNI" == 'example.com' ]]
+[[ -z "$ACME_EMAIL" ]]
 
 echo 'Проверки пройдены.'
