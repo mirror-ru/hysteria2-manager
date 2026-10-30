@@ -362,13 +362,13 @@ validate_client_db() {
     while IFS='|' read -r client_name client_user client_password cc_choice down up || [[ -n "$client_name$client_user$client_password$cc_choice$down$up" ]]; do
         [[ -n "$client_name$client_user$client_password$cc_choice$down$up" ]] || continue
         if ! valid_name "$client_name" || ! valid_name "$client_user" || [[ ! "$client_password" =~ ^[A-Za-z0-9]+$ ]] || [[ -n "${seen_names[$client_name]:-}" || -n "${seen_users[$client_user]:-}" ]]; then
-            echo -e "${RED}Повреждена база клиентов: проверьте имена, пароли и повторяющиеся записи в $CLIENTS_DB.${NC}" >&2
+            echo -e "${RED}Повреждена база клиентов: проверьте имена, пароли и повторяющиеся записи в $CLIENTS_DB${NC}" >&2
             return 1
         fi
         seen_names[$client_name]=1; seen_users[$client_user]=1
         ((count += 1))
     done < "$CLIENTS_DB"
-    (( count > 0 )) || { echo -e "${RED}В базе нет корректных записей клиентов.${NC}" >&2; return 1; }
+    (( count > 0 )) || { echo -e "${RED}В базе нет корректных записей клиентов${NC}" >&2; return 1; }
 }
 
 write_userpass_entries() {
@@ -398,7 +398,7 @@ rebuild_client_profiles() {
     done < "$CLIENTS_DB"
     if ! chmod 600 "$CLIENT_LIST" || ! mv -f "$CLIENT_LIST" "$list_target"; then
         rm -f "$CLIENT_LIST"
-        echo -e "${RED}Не удалось обновить список ссылок клиентов.${NC}" >&2
+        echo -e "${RED}Не удалось обновить список ссылок клиентов${NC}" >&2
         return 1
     fi
 }
@@ -721,7 +721,7 @@ EOF
     chmod 600 "$SETTINGS_FILE" "$CLIENTS_DB"
     while [[ ! -s "$CLIENTS_DB" ]]; do
         add_client || die "Ввод завершён до создания клиента"
-        [[ -s "$CLIENTS_DB" ]] || echo -e "${YELLOW}Добавьте хотя бы одного клиента перед запуском сервера.${NC}"
+          [[ -s "$CLIENTS_DB" ]] || echo -e "${YELLOW}Добавьте хотя бы одного клиента перед запуском сервера${NC}"
     done
     save_server_config || die "Не удалось применить конфигурацию сервера"
     systemctl enable hysteria || die "Не удалось включить сервис Hysteria"
@@ -747,7 +747,7 @@ ${BLUE}--- Обновление ядра ---${NC}"
     local current_normalized="${CURRENT_VER#v}" latest_normalized="${LATEST_VER#app/}"
     latest_normalized="${latest_normalized#v}"
     if [[ -n "$current_normalized" && "$current_normalized" == "$latest_normalized" ]]; then
-        echo -e "${GREEN}Установлена последняя версия.${NC}"
+        echo -e "${GREEN}Установлена последняя версия${NC}"
         return
     fi
 
@@ -756,43 +756,43 @@ ${BLUE}--- Обновление ядра ---${NC}"
         detect_arch
         echo -e "${GREEN}Загрузка версии $latest_display для linux-${ARCH}...${NC}"
         local tmp_bin backup_bin
-        tmp_bin=$(mktemp "${BIN_PATH}.XXXXXX") || { echo -e "${RED}Не удалось создать временный файл бинарника.${NC}"; return; }
+        tmp_bin=$(mktemp "${BIN_PATH}.XXXXXX") || { echo -e "${RED}Не удалось создать временный файл бинарника${NC}"; return; }
         if ! download_verified_binary "$tmp_bin" "$LATEST_VER"; then
             rm -f "$tmp_bin"
-            echo -e "${RED}Загрузка или проверка контрольной суммы не удалась; текущий бинарник сохранён.${NC}"
+            echo -e "${RED}Загрузка или проверка контрольной суммы не удалась; текущий бинарник сохранён${NC}"
             return
         fi
         chmod 755 "$tmp_bin"
         if ! "$tmp_bin" version >/dev/null 2>&1; then
             rm -f "$tmp_bin"
-            echo -e "${RED}Загруженный бинарник не прошёл проверку; текущий бинарник сохранён.${NC}"
+            echo -e "${RED}Загруженный бинарник не прошёл проверку; текущий бинарник сохранён${NC}"
             return
         fi
-        backup_bin=$(mktemp "${BIN_PATH}.backup.XXXXXX") || { rm -f "$tmp_bin"; echo -e "${RED}Не удалось создать файл резервной копии.${NC}"; return; }
+        backup_bin=$(mktemp "${BIN_PATH}.backup.XXXXXX") || { rm -f "$tmp_bin"; echo -e "${RED}Не удалось создать файл резервной копии${NC}"; return; }
         if ! cp -p "$BIN_PATH" "$backup_bin"; then
             rm -f "$tmp_bin" "$backup_bin"
-            echo -e "${RED}Не удалось создать резервную копию текущего бинарника.${NC}"
+            echo -e "${RED}Не удалось создать резервную копию текущего бинарника${NC}"
             return
         fi
         if ! mv -f "$tmp_bin" "$BIN_PATH"; then
             rm -f "$tmp_bin" "$backup_bin"
-            echo -e "${RED}Не удалось установить новый бинарник; текущий сохранён.${NC}"
+            echo -e "${RED}Не удалось установить новый бинарник; текущий сохранён${NC}"
             return
         fi
         rm -f "$tmp_bin"
         if ! systemctl restart hysteria || ! systemctl is-active --quiet hysteria; then
-            echo -e "${RED}Новый бинарник не запустился; выполняется откат.${NC}"
+            echo -e "${RED}Новый бинарник не запустился; выполняется откат${NC}"
             if ! mv -f "$backup_bin" "$BIN_PATH"; then
                 echo -e "${RED}Не удалось восстановить бинарник. Резервная копия сохранена: $backup_bin${NC}" >&2
                 return
             fi
-            systemctl restart hysteria || echo -e "${RED}Не удалось запустить сервис после отката; проверьте journalctl -u hysteria.${NC}" >&2
+            systemctl restart hysteria || echo -e "${RED}Не удалось запустить сервис после отката; проверьте journalctl -u hysteria${NC}" >&2
             return
         fi
         rm -f "$backup_bin"
         echo -e "${GREEN}Hysteria 2 успешно обновлена!${NC}"
     else
-        echo "Обновление отменено."
+        echo "Обновление отменено"
     fi
 }
 
@@ -804,10 +804,10 @@ add_client() {
 ${BLUE}--- Добавление клиента ---${NC}"
     read -p "Имя клиента (пустая строка — назад): " CLIENT_NAME || return 1
     if [[ -z "$CLIENT_NAME" ]]; then return; fi
-    valid_name "$CLIENT_NAME" || { echo -e "${RED}Используйте 1–32 латинских букв, цифр, _ или -.${NC}"; return; }
+    valid_name "$CLIENT_NAME" || { echo -e "${RED}Используйте 1–32 латинских букв, цифр, _ или -${NC}"; return; }
     if [[ -s "$CLIENTS_DB" ]] && ! validate_client_db; then return; fi
     if [[ -f "$CLIENTS_DB" ]] && awk -F'|' -v n="$CLIENT_NAME" '$1 == n { found=1 } END { exit !found }' "$CLIENTS_DB"; then
-        echo -e "${RED}Клиент с таким именем уже существует.${NC}"
+        echo -e "${RED}Клиент с таким именем уже существует${NC}"
         return
     fi
 
@@ -819,10 +819,10 @@ ${BLUE}--- Добавление клиента ---${NC}"
     read -p "Выбор [1-3, Enter=2]: " CC_CHOICE
     if [[ "$CC_CHOICE" == "0" ]]; then return; fi
     CC_CHOICE=${CC_CHOICE:-2}
-    [[ "$CC_CHOICE" =~ ^[1-3]$ ]] || { echo -e "${RED}Недопустимый выбор алгоритма.${NC}"; return; }
+    [[ "$CC_CHOICE" =~ ^[1-3]$ ]] || { echo -e "${RED}Недопустимый выбор алгоритма${NC}"; return; }
 
     CLIENT_USER="$CLIENT_NAME"
-    CLIENT_PASSWORD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль клиента.${NC}" >&2; return; }
+    CLIENT_PASSWORD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль клиента${NC}" >&2; return; }
     local DOWN="" UP=""
 
     case $CC_CHOICE in
@@ -831,16 +831,16 @@ ${BLUE}--- Добавление клиента ---${NC}"
             read -p "Скорость отдачи, Mbps [20]: " UP
             DOWN=${DOWN:-100}
             UP=${UP:-20}
-            [[ "$DOWN" =~ ^[1-9][0-9]{0,5}$ && "$UP" =~ ^[1-9][0-9]{0,5}$ ]] || { echo -e "${RED}Значения скорости должны быть положительными числами.${NC}"; return; }
+            [[ "$DOWN" =~ ^[1-9][0-9]{0,5}$ && "$UP" =~ ^[1-9][0-9]{0,5}$ ]] || { echo -e "${RED}Значения скорости должны быть положительными числами${NC}"; return; }
             ;;
     esac
     local db_backup tmp_db
-    db_backup=$(mktemp "${CLIENTS_DB}.backup.XXXXXX") || { echo -e "${RED}Не удалось создать резервную копию базы клиентов.${NC}"; return; }
-    cp -p "$CLIENTS_DB" "$db_backup" || { rm -f "$db_backup"; echo -e "${RED}Не удалось сохранить резервную копию базы клиентов.${NC}"; return; }
-    tmp_db=$(mktemp "${CLIENTS_DB}.XXXXXX") || { rm -f "$db_backup"; echo -e "${RED}Не удалось подготовить базу клиентов.${NC}" >&2; return; }
+    db_backup=$(mktemp "${CLIENTS_DB}.backup.XXXXXX") || { echo -e "${RED}Не удалось создать резервную копию базы клиентов${NC}"; return; }
+    cp -p "$CLIENTS_DB" "$db_backup" || { rm -f "$db_backup"; echo -e "${RED}Не удалось сохранить резервную копию базы клиентов${NC}"; return; }
+    tmp_db=$(mktemp "${CLIENTS_DB}.XXXXXX") || { rm -f "$db_backup"; echo -e "${RED}Не удалось подготовить базу клиентов${NC}" >&2; return; }
     if ! awk '{print}' "$CLIENTS_DB" > "$tmp_db" || ! printf '%s|%s|%s|%s|%s|%s\n' "$CLIENT_NAME" "$CLIENT_USER" "$CLIENT_PASSWORD" "$CC_CHOICE" "$DOWN" "$UP" >> "$tmp_db" || ! chmod 600 "$tmp_db" || ! mv -f "$tmp_db" "$CLIENTS_DB"; then
         rm -f "$tmp_db" "$db_backup"
-        echo -e "${RED}Не удалось обновить базу клиентов.${NC}"
+        echo -e "${RED}Не удалось обновить базу клиентов${NC}"
         return
     fi
     if ! rebuild_client_profiles; then
@@ -849,8 +849,8 @@ ${BLUE}--- Добавление клиента ---${NC}"
             return
         fi
         rm -f "${CLIENTS_DIR:?}/${CLIENT_NAME}.yaml" "${CLIENT_EXPORT_DIR:?}/${CLIENT_NAME}_hysteria.yaml"
-        rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов.${NC}" >&2
-        echo -e "${RED}Клиент не добавлен: не удалось создать профиль.${NC}" >&2
+        rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов${NC}" >&2
+        echo -e "${RED}Клиент не добавлен: не удалось создать профиль${NC}" >&2
         return
     fi
     chmod 600 "$CLIENTS_DB"
@@ -861,8 +861,8 @@ ${BLUE}--- Добавление клиента ---${NC}"
                 return
             fi
             rm -f "${CLIENTS_DIR:?}/${CLIENT_NAME}.yaml" "${CLIENT_EXPORT_DIR:?}/${CLIENT_NAME}_hysteria.yaml"
-            rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов.${NC}" >&2
-            echo -e "${RED}Клиент не добавлен: конфигурацию сервера не удалось перезагрузить.${NC}"
+            rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов${NC}" >&2
+            echo -e "${RED}Клиент не добавлен: конфигурацию сервера не удалось перезагрузить${NC}"
             return
         fi
     fi
@@ -875,11 +875,11 @@ ${BLUE}--- Добавление клиента ---${NC}"
 print_qr() {
     local data="$1"
     if [[ -z "$data" ]]; then
-        echo -e "${RED}Не удалось показать QR: ссылка клиента пуста.${NC}" >&2
+        echo -e "${RED}Не удалось показать QR: ссылка клиента пуста${NC}" >&2
         return 1
     fi
     if ! command -v qrencode >/dev/null 2>&1; then
-        echo -e "${RED}Не удалось показать QR: команда qrencode не найдена.${NC}" >&2
+        echo -e "${RED}Не удалось показать QR: команда qrencode не найдена${NC}" >&2
         return 1
     fi
     if ! printf '%s' "$data" | qrencode -t ANSI; then
@@ -890,7 +890,7 @@ print_qr() {
 
 list_clients() {
     if [ ! -f "$CLIENT_LIST" ] || [ ! -s "$CLIENT_LIST" ]; then
-        echo -e "${RED}Клиенты не найдены.${NC}"
+        echo -e "${RED}Клиенты не найдены${NC}"
         return
     fi
     echo -e "
@@ -918,13 +918,13 @@ ${BLUE}--- Список клиентов ---${NC}"
         print_qr "${links[$idx]}"
         echo -e "Ссылка: ${links[$idx]}"
     else
-        echo -e "${RED}Недопустимый выбор.${NC}"
+        echo -e "${RED}Недопустимый выбор${NC}"
     fi
 }
 
 delete_client() {
     if [ ! -f "$CLIENTS_DB" ] || [ ! -s "$CLIENTS_DB" ]; then
-        echo -e "${RED}Нет клиентов для удаления.${NC}"
+        echo -e "${RED}Нет клиентов для удаления${NC}"
         return
     fi
     echo -e "
@@ -944,9 +944,9 @@ ${BLUE}--- Удаление клиента ---${NC}"
     if [[ "$DEL_NUM" =~ ^[1-9][0-9]{0,8}$ ]] && [ "$DEL_NUM" -le "${#names[@]}" ]; then
         local idx=$((DEL_NUM - 1))
         local DEL_NAME="${names[$idx]}"
-        valid_name "$DEL_NAME" || { echo -e "${RED}Недопустимое имя клиента в базе.${NC}" >&2; return; }
+        valid_name "$DEL_NAME" || { echo -e "${RED}Недопустимое имя клиента в базе${NC}" >&2; return; }
         if (( ${#names[@]} == 1 )); then
-            echo -e "${RED}Нельзя удалить последнего клиента: серверу нужна хотя бы одна учётная запись.${NC}"
+            echo -e "${RED}Нельзя удалить последнего клиента: серверу нужна хотя бы одна учётная запись${NC}"
             return
         fi
         local tmp_db db_backup
@@ -963,8 +963,8 @@ ${BLUE}--- Удаление клиента ---${NC}"
                 echo -e "${RED}Не удалось восстановить базу клиентов. Резервная копия: $db_backup${NC}" >&2
                 return
             fi
-            rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов.${NC}" >&2
-            echo -e "${RED}Клиент не удалён: не удалось пересоздать профили.${NC}" >&2
+            rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов${NC}" >&2
+            echo -e "${RED}Клиент не удалён: не удалось пересоздать профили${NC}" >&2
             return
         fi
         if ! save_server_config; then
@@ -972,22 +972,22 @@ ${BLUE}--- Удаление клиента ---${NC}"
                 echo -e "${RED}Не удалось восстановить базу клиентов. Резервная копия: $db_backup${NC}" >&2
                 return
             fi
-            rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов.${NC}" >&2
-            echo -e "${RED}Клиент '$DEL_NAME' не удалён: конфигурацию сервера не удалось перезагрузить.${NC}"
+            rebuild_client_profiles || echo -e "${RED}Не удалось восстановить профили клиентов${NC}" >&2
+            echo -e "${RED}Клиент '$DEL_NAME' не удалён: конфигурацию сервера не удалось перезагрузить${NC}"
             return
         fi
         rm -f "$db_backup"
         rm -f "${CLIENTS_DIR:?}/${DEL_NAME}.yaml" "${CLIENT_EXPORT_DIR:?}/${DEL_NAME}_hysteria.yaml"
-        echo -e "${GREEN}Клиент '$DEL_NAME' успешно удалён.${NC}"
+        echo -e "${GREEN}Клиент '$DEL_NAME' успешно удалён${NC}"
     else
-        echo -e "${RED}Недопустимый выбор.${NC}"
+        echo -e "${RED}Недопустимый выбор${NC}"
     fi
 }
 
 modify_settings() {
     load_settings
     if [[ ! -s "$CLIENTS_DB" ]]; then
-        echo -e "${YELLOW}Добавьте хотя бы одного клиента перед изменением настроек сервера.${NC}"
+        echo -e "${YELLOW}Добавьте хотя бы одного клиента перед изменением настроек сервера${NC}"
         return
     fi
     local settings_backup settings_write_failed=false
@@ -1006,14 +1006,14 @@ ${BLUE}--- Настройки сервера ---${NC}"
             read -p "Новый основной порт (например, 443): " NEW_PORT
             if [[ -n "$NEW_PORT" ]] && valid_port "$NEW_PORT"; then
                 if [[ -n "$HOP_RANGE" ]] && port_in_range "$NEW_PORT" "$HOP_RANGE"; then
-                    echo -e "${RED}Основной порт должен находиться вне диапазона port hopping.${NC}"
+                    echo -e "${RED}Основной порт должен находиться вне диапазона port hopping${NC}"
                     rm -f "$settings_backup"
                     return
                 fi
                 write_setting PORT "$NEW_PORT"
                 PORT=$NEW_PORT
             elif [[ -n "$NEW_PORT" ]]; then
-                echo -e "${RED}Недопустимый порт.${NC}"; rm -f "$settings_backup"; return
+                echo -e "${RED}Недопустимый порт${NC}"; rm -f "$settings_backup"; return
             fi
             ;;
         2)
@@ -1027,7 +1027,7 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
                 HOP_RANGE=""
                 HOP_METHOD=""
             elif [[ -n "$NEW_RANGE" ]] && valid_range "$NEW_RANGE"; then
-                ! port_in_range "$PORT" "$NEW_RANGE" || { echo -e "${RED}Основной порт должен находиться вне диапазона.${NC}"; rm -f "$settings_backup"; return; }
+                ! port_in_range "$PORT" "$NEW_RANGE" || { echo -e "${RED}Основной порт должен находиться вне диапазона${NC}"; rm -f "$settings_backup"; return; }
                 echo -e "
 Метод port hopping:"
                 echo "1) Native (Hysteria сама управляет firewall — рекомендуется)"
@@ -1038,11 +1038,11 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
                     2) NEW_METHOD="iptables"; NEW_FW="iptables"; CMD_CHECK="iptables" ;;
                     3) NEW_METHOD="nftables"; NEW_FW="nftables"; CMD_CHECK="nft" ;;
                     1|'') NEW_METHOD="native"; NEW_FW=""; CMD_CHECK="" ;;
-                    *) echo -e "${RED}Недопустимый метод port hopping.${NC}"; rm -f "$settings_backup"; return ;;
+                    *) echo -e "${RED}Недопустимый метод port hopping${NC}"; rm -f "$settings_backup"; return ;;
                 esac
                 if [[ -n "$CMD_CHECK" ]] && ! command -v "$CMD_CHECK" >/dev/null 2>&1; then
                     FIREWALL_BACKEND=$NEW_FW
-                    install_deps || { FIREWALL_BACKEND=""; rm -f "$settings_backup"; echo -e "${RED}Настройки не изменены: зависимости не установлены.${NC}" >&2; return; }
+                    install_deps || { FIREWALL_BACKEND=""; rm -f "$settings_backup"; echo -e "${RED}Настройки не изменены: зависимости не установлены${NC}" >&2; return; }
                 fi
                 write_setting HOP_RANGE "$NEW_RANGE"
                 HOP_RANGE=$NEW_RANGE
@@ -1056,12 +1056,12 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
                     FIREWALL_BACKEND=""
                 fi
             elif [[ -n "$NEW_RANGE" ]]; then
-                echo -e "${RED}Недопустимый диапазон портов.${NC}"; rm -f "$settings_backup"; return
+                echo -e "${RED}Недопустимый диапазон портов${NC}"; rm -f "$settings_backup"; return
             fi
             ;;
         3)
             read -p "Новый домен маскировки: " MASQ_DOMAIN
-            valid_host "$MASQ_DOMAIN" || { echo -e "${RED}Недопустимый домен.${NC}"; rm -f "$settings_backup"; return; }
+            valid_host "$MASQ_DOMAIN" || { echo -e "${RED}Недопустимый домен${NC}"; rm -f "$settings_backup"; return; }
             write_setting MASQ_DOMAIN "$MASQ_DOMAIN"
             ;;
         4)
@@ -1078,7 +1078,7 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
                     OBFS_ENABLED="false"; OBFS_TYPE=""
                     ;;
                 2)
-                    NEW_PWD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль обфускации.${NC}" >&2; rm -f "$settings_backup"; return; }
+                    NEW_PWD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль обфускации${NC}" >&2; rm -f "$settings_backup"; return; }
                     write_setting OBFS_ENABLED true
                     write_setting OBFS_TYPE salamander
                     write_setting OBFS_PASSWORD "$NEW_PWD"
@@ -1087,11 +1087,11 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
                     OBFS_ENABLED="true"; OBFS_TYPE="salamander"; OBFS_PASSWORD=$NEW_PWD
                     ;;
                 3)
-                    NEW_PWD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль обфускации.${NC}" >&2; rm -f "$settings_backup"; return; }
+                    NEW_PWD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль обфускации${NC}" >&2; rm -f "$settings_backup"; return; }
                     read -p "Gecko minPacketSize [512]: " NEW_MIN
                     read -p "Gecko maxPacketSize [1200]: " NEW_MAX
                     NEW_MIN=${NEW_MIN:-512}; NEW_MAX=${NEW_MAX:-1200}
-                    [[ "$NEW_MIN" =~ ^[1-9][0-9]{0,3}$ && "$NEW_MAX" =~ ^[1-9][0-9]{0,3}$ ]] && (( NEW_MIN <= NEW_MAX && NEW_MAX <= 2048 )) || { echo -e "${RED}Укажите размеры от 1 до 2048 без ведущих нулей; минимальный размер не должен превышать максимальный.${NC}"; rm -f "$settings_backup"; return; }
+                    [[ "$NEW_MIN" =~ ^[1-9][0-9]{0,3}$ && "$NEW_MAX" =~ ^[1-9][0-9]{0,3}$ ]] && (( NEW_MIN <= NEW_MAX && NEW_MAX <= 2048 )) || { echo -e "${RED}Укажите размеры от 1 до 2048 без ведущих нулей; минимальный размер не должен превышать максимальный${NC}"; rm -f "$settings_backup"; return; }
                     write_setting OBFS_ENABLED true
                     write_setting OBFS_TYPE gecko
                     write_setting OBFS_PASSWORD "$NEW_PWD"
@@ -1103,11 +1103,11 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
             esac
             ;;
         0) rm -f "$settings_backup"; return ;;
-        *) echo "Недопустимый выбор."; rm -f "$settings_backup"; return ;;
+        *) echo "Недопустимый выбор"; rm -f "$settings_backup"; return ;;
     esac
     if [[ "$settings_write_failed" == true ]]; then
         if mv -f "$settings_backup" "$SETTINGS_FILE"; then
-            echo -e "${RED}Не удалось записать настройки. Предыдущие настройки восстановлены.${NC}" >&2
+            echo -e "${RED}Не удалось записать настройки. Предыдущие настройки восстановлены${NC}" >&2
         else
             echo -e "${RED}Не удалось восстановить настройки. Резервная копия: $settings_backup${NC}" >&2
         fi
@@ -1116,12 +1116,12 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
     if save_server_config; then
         if rebuild_client_profiles; then
             rm -f "$settings_backup"
-            echo -e "${GREEN}Настройки обновлены. Конфигурации клиентов и QR-ссылки пересозданы.${NC}"
+            echo -e "${GREEN}Настройки обновлены. Конфигурации клиентов и QR-ссылки пересозданы${NC}"
         else
             mv -f "$settings_backup" "$SETTINGS_FILE"
             save_server_config >/dev/null 2>&1 || true
             rebuild_client_profiles >/dev/null 2>&1 || true
-            echo -e "${RED}Настройки восстановлены: профили клиентов не удалось пересоздать.${NC}"
+            echo -e "${RED}Настройки восстановлены: профили клиентов не удалось пересоздать${NC}"
         fi
     else
         if ! mv -f "$settings_backup" "$SETTINGS_FILE"; then
@@ -1129,7 +1129,7 @@ ${YELLOW}Текущий диапазон: ${HOP_RANGE:-нет}  |  Метод: $
             return
         fi
         rebuild_client_profiles >/dev/null 2>&1 || true
-        echo -e "${RED}Настройки не применены. Проверьте сообщение об ошибке выше.${NC}"
+        echo -e "${RED}Настройки не применены. Проверьте сообщение об ошибке выше${NC}"
     fi
 }
 
@@ -1151,29 +1151,29 @@ uninstall_hysteria() {
         echo -e "${RED}Удаление выполнено не полностью. Проверьте сообщения об ошибках и оставшиеся файлы Hysteria.${NC}" >&2
         return 1
     fi
-    echo -e "${GREEN}Файлы Hysteria и сервиса удалены.${NC}"
+    echo -e "${GREEN}Файлы Hysteria и сервиса удалены${NC}"
 }
 
 update_manager() {
     local tmp_file snapshot_json snapshot_sha snapshot_date snapshot_date_local downloaded_at timezone_label
     if ! command -v curl >/dev/null 2>&1; then
-        echo -e "${RED}Команда curl не найдена. Обновление менеджера невозможно.${NC}"
+        echo -e "${RED}Команда curl не найдена. Обновление менеджера невозможно${NC}"
         return
     fi
     tmp_file=$(mktemp "${SCRIPT_PATH}.update.XXXXXX") || {
-        echo -e "${RED}Не удалось создать временный файл обновления.${NC}"
+        echo -e "${RED}Не удалось создать временный файл обновления${NC}"
         return
     }
     echo -e "${GREEN}Проверка обновлений менеджера...${NC}"
     if ! curl -q --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 15 --max-time 120 \
         -o "$tmp_file" "$MANAGER_RAW_URL"; then
         rm -f "$tmp_file"
-        echo -e "${RED}Не удалось скачать обновление по публичной raw-ссылке.${NC}"
+        echo -e "${RED}Не удалось скачать обновление по публичной raw-ссылке${NC}"
         return
     fi
     if [[ ! -s "$tmp_file" ]]; then
         rm -f "$tmp_file"
-        echo -e "${RED}Сервер вернул пустой файл обновления.${NC}"
+        echo -e "${RED}Сервер вернул пустой файл обновления${NC}"
         return
     fi
     timezone_label=$(date '+%Z (%z)' 2>/dev/null || printf 'локальная зона недоступна')
@@ -1189,7 +1189,7 @@ update_manager() {
         snapshot_date_local=$(date -d "$snapshot_date" '+%Y-%m-%d %H:%M:%S %Z (%z)' 2>/dev/null || printf '%s (локальная зона: %s)' "$snapshot_date" "$timezone_label")
         echo -e "${GREEN}Снимок скрипта: ${snapshot_date_local}, commit ${snapshot_sha:0:12}${NC}"
     else
-        echo -e "${YELLOW}Снимок загружен: ${downloaded_at}; дату коммита получить не удалось.${NC}"
+        echo -e "${YELLOW}Снимок загружен: ${downloaded_at}; дату коммита получить не удалось${NC}"
     fi
     if [[ "$(head -n 1 "$tmp_file")" != '#!/bin/bash' ]] || ! grep -Fxq '# Hysteria 2 Manager' "$tmp_file"; then
         rm -f "$tmp_file"
@@ -1203,16 +1203,16 @@ update_manager() {
     fi
     if cmp -s "$tmp_file" "$SCRIPT_PATH"; then
         rm -f "$tmp_file"
-        echo -e "${GREEN}Установлена последняя версия менеджера.${NC}"
+        echo -e "${GREEN}Установлена последняя версия менеджера${NC}"
         return
     fi
     chmod --reference="$SCRIPT_PATH" "$tmp_file" 2>/dev/null || chmod 755 "$tmp_file"
     if ! mv -f "$tmp_file" "$SCRIPT_PATH"; then
         rm -f "$tmp_file"
-        echo -e "${RED}Не удалось заменить файл скрипта.${NC}"
+        echo -e "${RED}Не удалось заменить файл скрипта${NC}"
         return
     fi
-    echo -e "${GREEN}Скрипт обновлён.${NC}"
+    echo -e "${GREEN}Скрипт обновлён${NC}"
     echo -e "${GREEN}Перезапуск...${NC}"
     exec bash "$SCRIPT_PATH"
 }
@@ -1252,6 +1252,6 @@ ${BLUE}Менеджер Hysteria 2${NC}"
             fi
             ;;
         0) exit 0 ;;
-        *) echo -e "${RED}Недопустимый выбор.${NC}" ;;
+        *) echo -e "${RED}Недопустимый выбор${NC}" ;;
     esac
 done
