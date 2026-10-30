@@ -1154,7 +1154,7 @@ uninstall_hysteria() {
 }
 
 update_manager() {
-    local tmp_file backup_file snapshot_json snapshot_sha snapshot_date snapshot_date_local downloaded_at timezone_label
+    local tmp_file snapshot_json snapshot_sha snapshot_date snapshot_date_local downloaded_at timezone_label
     if ! command -v curl >/dev/null 2>&1; then
         echo -e "${RED}Команда curl не найдена. Обновление менеджера невозможно.${NC}"
         return
@@ -1206,18 +1206,12 @@ update_manager() {
         return
     fi
     chmod --reference="$SCRIPT_PATH" "$tmp_file" 2>/dev/null || chmod 755 "$tmp_file"
-    backup_file=$(mktemp "${SCRIPT_PATH}.backup.XXXXXX") || { rm -f "$tmp_file"; echo -e "${RED}Не удалось создать резервную копию скрипта.${NC}"; return; }
-    if ! cp -p "$SCRIPT_PATH" "$backup_file"; then
-        rm -f "$tmp_file" "$backup_file"
-        echo -e "${RED}Не удалось сохранить резервную копию скрипта.${NC}"
-        return
-    fi
     if ! mv -f "$tmp_file" "$SCRIPT_PATH"; then
-        rm -f "$tmp_file" "$backup_file"
+        rm -f "$tmp_file"
         echo -e "${RED}Не удалось заменить файл скрипта.${NC}"
         return
     fi
-    echo -e "${GREEN}Скрипт обновлён. Предыдущая версия сохранена: $backup_file${NC}"
+    echo -e "${GREEN}Скрипт обновлён.${NC}"
     echo -e "${GREEN}Перезапуск...${NC}"
     exec bash "$SCRIPT_PATH"
 }
