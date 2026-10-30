@@ -741,7 +741,8 @@ ${BLUE}--- Обновление ядра ---${NC}"
         echo -e "${RED}Не удалось получить последнюю версию. Проверьте сеть.${NC}"
         return
     fi
-    echo -e "Последняя версия: ${GREEN}$LATEST_VER${NC}"
+    local latest_display="${LATEST_VER#app/}"
+    echo -e "Последняя версия: ${GREEN}$latest_display${NC}"
 
     local current_normalized="${CURRENT_VER#v}" latest_normalized="${LATEST_VER#app/}"
     latest_normalized="${latest_normalized#v}"
@@ -750,10 +751,10 @@ ${BLUE}--- Обновление ядра ---${NC}"
         return
     fi
 
-    read -p "Обновить до $LATEST_VER? [y/N]: " CONFIRM
+    read -p "Обновить до $latest_display? [y/N]: " CONFIRM
     if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
         detect_arch
-        echo -e "${GREEN}Загрузка версии $LATEST_VER для linux-${ARCH}...${NC}"
+        echo -e "${GREEN}Загрузка версии $latest_display для linux-${ARCH}...${NC}"
         local tmp_bin backup_bin
         tmp_bin=$(mktemp "${BIN_PATH}.XXXXXX") || { echo -e "${RED}Не удалось создать временный файл бинарника.${NC}"; return; }
         if ! download_verified_binary "$tmp_bin" "$LATEST_VER"; then
