@@ -19,6 +19,7 @@ CLIENT_LIST="${HYSTERIA_DIR}/clients.list"
 SCRIPT_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
 MANAGER_RAW_URL="https://raw.githubusercontent.com/mirror-ru/hysteria2-manager/main/hysteria-manager.sh"
+MANAGER_COMMITS_API_URL="https://api.github.com/repos/mirror-ru/hysteria2-manager/commits?path=hysteria-manager.sh&per_page=1"
 
 if [[ "$EUID" -ne 0 ]]; then
     echo -e "${RED}Ошибка: скрипт нужно запускать от root${NC}"
@@ -1153,7 +1154,7 @@ uninstall_hysteria() {
 }
 
 update_manager() {
-    local tmp_file backup_file
+    local tmp_file backup_file snapshot_json snapshot_sha snapshot_date downloaded_at
     if ! command -v curl >/dev/null 2>&1; then
         echo -e "${RED}Команда curl не найдена. Обновление менеджера невозможно.${NC}"
         return
@@ -1173,6 +1174,19 @@ update_manager() {
         rm -f "$tmp_file"
         echo -e "${RED}Сервер вернул пустой файл обновления.${NC}"
         return
+    fi
+    downloaded_at=$(date -u '+%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || printf 'время недоступно')
+    if snapshot_json=$(curl -q --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 15 --max-time 30 \
+        -A 'hysteria-manager' "$MANAGER_COMMITS_API_URL"); then
+        if command -v jq >/dev/null 2>&1; then
+            snapshot_sha=$(printf '%s' "$snapshot_json" | jq -r '.[0].sha // empty' 2>/dev/null)
+            snapshot_date=$(printf '%s' "$snapshot_json" | jq -r '.[0].commit.committer.date // empty' 2>/dev/null)
+        fi
+    fi
+    if [[ -n "$snapshot_sha" && -n "$snapshot_date" ]]; then
+        echo -e "${GREEN}Снимок скрипта: ${snapshot_date}, commit ${snapshot_sha:0:12}${NC}"
+    else
+        echo -e "${YELLOW}Снимок загружен: ${downloaded_at}; дату коммита получить не удалось.${NC}"
     fi
     if [[ "$(head -n 1 "$tmp_file")" != '#!/bin/bash' ]] || ! grep -Fxq '# Hysteria 2 Manager' "$tmp_file"; then
         rm -f "$tmp_file"
