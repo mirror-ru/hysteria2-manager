@@ -1,33 +1,49 @@
-# Hysteria2 Installation and Management Script
+# Скрипт установки и управления Hysteria 2
 
-A universal bash script to install, configure, and manage a Hysteria 2 VPN server on Linux.
+Универсальный Bash-скрипт для установки, настройки и управления VPN-сервером Hysteria 2 на Linux.
 
-## Features
+## Возможности
 
-- **OS Support**: Works automatically on Debian, Ubuntu, CentOS, Fedora, Arch Linux, and openSUSE.
-- **Architecture Support**: Auto-detects and installs the correct binary for amd64, arm64, arm, s390x, and 386.
-- **Certificates**: Choose between Let's Encrypt (domain required) or an auto-generated self-signed certificate bound to your server's IP.
-- **Client Management**: Add, list, and delete clients. Automatically generates configuration files, sharing links, and QR codes for the terminal.
-- **Bypass Restrictions**: Built-in configuration for website masquerading and two obfuscation methods — **Salamander** (random-looking bytes) and **Gecko** (random bytes with configurable packet size randomization) — to evade QUIC/HTTP/3 detection.
-- **Port Hopping**: Bypass aggressive UDP blocking and QoS by listening on a wide range of ports simultaneously with your main port. Supports **native mode** (Hysteria handles firewall rules automatically — recommended) as well as manual `iptables`/`nftables` backends for maximum compatibility.
-- **Smart Firewall Management**: Native, clean integration with both `iptables` and `nftables`. Port forwarding rules are dynamically applied and safely removed alongside the `systemd` service lifecycle.
-- **Congestion Control**: Select between Hysteria Brutal, BBR, or Reno for each client.
-- **In-place Updates**: Check for and install the latest Hysteria 2 core updates directly from the official repository without losing your configurations.
-- **IPv6 Support**: Automatic public IP detection with fallback for IPv6-only servers.
-- **Safe Uninstall**: Fully cleans up systemd units, binaries, configs, and any leftover firewall rules (iptables/nftables) that may have been left behind after crashes.
+- **Поддержка ОС**: автоматическая работа на Debian, Ubuntu, CentOS, Fedora, Arch Linux и openSUSE.
+- **Поддержка архитектур**: автоматическое определение и установка бинарника для amd64, arm64, arm, s390x и 386.
+- **Сертификаты**: Let's Encrypt (требуется домен) или автоматически созданный самоподписанный сертификат для IP сервера.
+- **Управление клиентами**: каждому клиенту назначается собственная пара username/password. После удаления клиента карта авторизации сервера пересобирается, и его учётные данные перестают работать.
+- **Обход ограничений**: маскировка под сайт и две обфускации — **Salamander** и **Gecko** — для обхода распознавания QUIC/HTTP/3.
+- **Port hopping**: работа через широкий диапазон UDP-портов; доступны **native** (рекомендуется) и ручные backend'ы `iptables`/`nftables`.
+- **Управление firewall**: правила порт hopping создаются и удаляются вместе с жизненным циклом сервиса `systemd`.
+- **Контроль перегрузки**: Brutal, BBR или Reno отдельно для каждого клиента.
+- **Обновление без потери настроек**: проверка и установка свежего ядра Hysteria из официального репозитория с проверкой SHA-256.
+- **Обновление менеджера из меню**: получение новой версии по защищённой raw-ссылке с проверкой синтаксиса перед заменой файла.
+- **IPv4**: автоматическое определение и настройка публичного IPv4-адреса.
+- **Безопасное удаление**: очистка unit-файлов, бинарников, конфигурации и оставшихся правил firewall.
 
-## Quick Install
+## Быстрая установка
 
-Run the following command as `root` on your server to download and execute the script directly from GitHub:
+Выполните на сервере от `root` (потребуется установленный `curl`):
 
 ```bash
-curl -O https://raw.githubusercontent.com/NedgNDG/hysteria2-install/main/hysteria-install.sh
-chmod +x hysteria-install.sh
-./hysteria-install.sh
+curl -fsSLo hysteria-manager.sh https://raw.githubusercontent.com/mirror-ru/hysteria2-manager/main/hysteria-manager.sh && bash hysteria-manager.sh
 ```
 
-After installation, use `./hysteria-install.sh` to manage Hysteria2.
+После установки запускайте менеджер командой `bash hysteria-manager.sh` из той же директории. Команда установки перезаписывает файл `hysteria-manager.sh`, если он уже существует.
 
-## Upgrading from older versions
+На Arch Linux скрипт не обновляет системную базу пакетов автоматически. Если зависимости отсутствуют, он покажет команду их установки с полным обновлением системы; выполните её вручную и повторно запустите менеджер.
 
-If you already have Hysteria installed via a previous version of this script, simply re-download and re-run it. Existing `settings.conf` files are backward-compatible — new fields will fall back to safe defaults.
+Пункт меню «99) Обновить скрипт» скачивает файл напрямую по публичной raw-ссылке. Поэтому репозиторий должен быть доступен без авторизации.
+Перед заменой предыдущая версия скрипта, включая локальные изменения, сохраняется рядом в файле с суффиксом `.backup.*`; его путь выводится в терминале.
+
+Обновление проверяет формат и синтаксис скачанного скрипта, но не проверяет криптографическую подпись. Оно доверяет содержимому ветки `main` репозитория и защищённому HTTPS-соединению.
+
+## Обновление со старых версий
+
+Если Hysteria уже установлена предыдущей версией, сначала сделайте резервную копию `/etc/hysteria` и файла сервиса. Автоматической миграции нет: если файлы настроек, базы клиентов или конфигурации отсутствуют, менеджер остановится, чтобы не перезаписать существующую установку. Для перехода потребуется отдельно подготовить новую установку и пересоздать профили клиентов. Теперь используется авторизация `userpass` с отдельными данными; старые ссылки с единым паролем автоматически не переносятся.
+
+YAML-файлы клиентов и база хранятся в `/etc/hysteria` с ограниченными правами. Для самоподписанного сертификата клиентам по-прежнему нужен `insecure: true`; в production лучше использовать сертификат домена.
+
+Созданный YAML-профиль для официального клиента Hysteria открывает SOCKS5-прокси на `127.0.0.1:1080` на устройстве клиента. При необходимости измените этот адрес и порт в файле. Ссылка и QR-код содержат параметры подключения; алгоритм контроля перегрузки и скорость следует настроить в клиентском приложении отдельно.
+
+Изменение порта, port hopping или обфускации пересоздаёт YAML-файлы, ссылки и QR-коды клиентов. Проверяйте изменения из второй SSH-сессии до закрытия текущей.
+
+## Проверка изменений
+
+В копии репозитория выполните `bash tests/regression.sh`. Тесты проверяют диапазоны портов, базу клиентов и генерацию профилей во временном каталоге; они не запускают systemd и не проверяют соединение с сервером.
