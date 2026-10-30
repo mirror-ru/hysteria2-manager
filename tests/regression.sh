@@ -68,6 +68,23 @@ if valid_email admin@example || valid_email 'admin@example.c'; then
     echo 'Ошибка: неверный email принят' >&2
     exit 1
 fi
+valid_name client_01
+valid_server_addr example.com
+valid_server_addr 192.0.2.10
+if valid_name '-client' || valid_name 'client name' || valid_server_addr 999.0.2.10; then
+    echo 'Ошибка: неверное имя или адрес принят' >&2
+    exit 1
+fi
+
+secret=$(random_secret)
+[[ "$secret" =~ ^[0-9a-f]{32}$ ]]
+
+printf 'PORT=443\n' > "$SETTINGS_FILE"
+settings_write_failed=false
+write_setting PORT 8443
+write_setting SNI example.com
+grep -Fxq 'PORT=8443' "$SETTINGS_FILE"
+grep -Fxq 'SNI=example.com' "$SETTINGS_FILE"
 
 cat > "$test_dir/hashes.txt" <<'EOF'
 ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789  build/hysteria-linux-amd64
@@ -75,6 +92,7 @@ ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789  build/hysteria
 EOF
 [[ "$(find_expected_hash "$test_dir/hashes.txt" hysteria-linux-amd64)" == "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" ]]
 [[ "$(find_expected_hash "$test_dir/hashes.txt" hysteria-linux-arm64)" == "1111111111111111111111111111111111111111111111111111111111111111" ]]
+[[ -z "$(find_expected_hash "$test_dir/hashes.txt" hysteria-linux-s390x)" ]]
 
 printf 'alice|alice|abc|2||\nbob|bob|def|2||' > "$CLIENTS_DB"
 validate_client_db
@@ -115,5 +133,36 @@ write_client_profile bob bob def
 grep -Fxq '  type: bbr' "$CLIENTS_DIR/bob.yaml"
 grep -Fxq '  type: salamander' "$CLIENTS_DIR/bob.yaml"
 grep -Fq 'obfs=salamander&obfs-password=0123456789abcdef0123456789abcdef' "$CLIENT_LIST"
+
+OBFS_TYPE=gecko OBFS_MIN_PKT=512 OBFS_MAX_PKT=1200
+write_client_profile carol carol ghi 2
+grep -Fxq '  type: gecko' "$CLIENTS_DIR/carol.yaml"
+grep -Fxq '    minPacketSize: 512' "$CLIENTS_DIR/carol.yaml"
+grep -Fxq '    maxPacketSize: 1200' "$CLIENTS_DIR/carol.yaml"
+
+cat > "$SETTINGS_FILE" <<EOF
+SERVER_ADDR=example.com
+PORT=443
+HOP_RANGE=
+HOP_METHOD=
+INSECURE_FLAG=true
+SNI=google.com
+OBFS_ENABLED=true
+OBFS_TYPE=salamander
+OBFS_PASSWORD=0123456789abcdef0123456789abcdef
+OBFS_MIN_PKT=
+OBFS_MAX_PKT=
+MASQ_DOMAIN=google.com
+CERT_TYPE=self
+DOMAIN=
+ACME_EMAIL=
+FIREWALL_BACKEND=
+EOF
+printf 'alice|alice|abc|2||\nbob|bob|def|2||\n' > "$CLIENTS_DB"
+load_settings
+validate_settings
+rebuild_client_profiles
+grep -Fxq 'auth: alice:abc' "$CLIENTS_DIR/alice.yaml"
+grep -Fxq 'auth: bob:def' "$CLIENTS_DIR/bob.yaml"
 
 echo 'Проверки пройдены.'
