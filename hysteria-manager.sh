@@ -628,20 +628,20 @@ ${YELLOW}Port hopping помогает обходить блокировку UDP
         SERVER_ADDR=$DOMAIN
         INSECURE_FLAG="false"
         SNI=$DOMAIN
+        read -p "Сайт для маскировки [google.com]: " MASQ_DOMAIN
+        MASQ_DOMAIN=${MASQ_DOMAIN:-google.com}
+        valid_host "$MASQ_DOMAIN" || die "Недопустимый домен маскировки: $MASQ_DOMAIN"
     elif [[ "$CERT_CHOICE" == "2" ]]; then
         CERT_TYPE="self"
         SERVER_ADDR=$SERVER_IP
-        read -p "Маскирующий SNI [google.com]: " SNI
-        SNI=${SNI:-google.com}
-        valid_host "$SNI" || die "Недопустимый SNI: $SNI"
+        read -p "Домен для SNI и маскировки [google.com]: " MASQ_DOMAIN
+        MASQ_DOMAIN=${MASQ_DOMAIN:-google.com}
+        valid_host "$MASQ_DOMAIN" || die "Недопустимый домен SNI и маскировки: $MASQ_DOMAIN"
+        SNI=$MASQ_DOMAIN
         INSECURE_FLAG="true"
     else
         die "Недопустимый выбор сертификата"
     fi
-
-    read -p "Сайт для маскировки [google.com]: " MASQ_DOMAIN
-    MASQ_DOMAIN=${MASQ_DOMAIN:-google.com}
-    valid_host "$MASQ_DOMAIN" || die "Недопустимый домен маскировки: $MASQ_DOMAIN"
 
     echo -e "
 Обфускация: Salamander (включена по умолчанию)"
