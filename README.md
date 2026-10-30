@@ -51,4 +51,3 @@ bash hysteria-manager.sh
 bash tests/regression.sh
 ```
 
-Тесты не заменяют проверку на реальном Linux-сервере: systemd, firewall и ACME в них не запускаются.
