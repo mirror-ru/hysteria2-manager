@@ -40,6 +40,35 @@ if valid_range 50000-20000 || valid_range 1-65536; then
     exit 1
 fi
 
+valid_port 1
+valid_port 65535
+if valid_port 0 || valid_port 65536 || valid_port 00001; then
+    echo 'Ошибка: неверный порт принят' >&2
+    exit 1
+fi
+port_in_range 443 400-500
+if port_in_range 443 444-500 || port_in_range 443 1-100; then
+    echo 'Ошибка: проверка попадания порта в диапазон работает неверно' >&2
+    exit 1
+fi
+
+valid_ipv4 192.0.2.1
+valid_ipv4 255.255.255.255
+if valid_ipv4 256.0.2.1 || valid_ipv4 192.0.2 || valid_ipv4 192.0.2.1.999; then
+    echo 'Ошибка: неверный IPv4 принят' >&2
+    exit 1
+fi
+valid_host example.com
+if valid_host '.example.com' || valid_host 'example..com' || valid_host 'example.com.'; then
+    echo 'Ошибка: неверный домен принят' >&2
+    exit 1
+fi
+valid_email admin@example.com
+if valid_email admin@example || valid_email 'admin@example.c'; then
+    echo 'Ошибка: неверный email принят' >&2
+    exit 1
+fi
+
 cat > "$test_dir/hashes.txt" <<'EOF'
 ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789  build/hysteria-linux-amd64
 1111111111111111111111111111111111111111111111111111111111111111  *hysteria-linux-arm64
@@ -79,5 +108,12 @@ write_client_profile alice alice abc 2
 grep -Fxq 'auth: alice:abc' "$CLIENTS_DIR/alice.yaml"
 grep -Fxq '  listen: 127.0.0.1:1080' "$CLIENTS_DIR/alice.yaml"
 cmp -s "$CLIENTS_DIR/alice.yaml" "$CLIENT_EXPORT_DIR/alice_hysteria.yaml"
+
+PORT=443 SERVER_ADDR=example.com SNI=google.com INSECURE_FLAG=true
+HOP_RANGE='' OBFS_ENABLED=true OBFS_TYPE=salamander OBFS_PASSWORD=0123456789abcdef0123456789abcdef
+write_client_profile bob bob def
+grep -Fxq '  type: bbr' "$CLIENTS_DIR/bob.yaml"
+grep -Fxq '  type: salamander' "$CLIENTS_DIR/bob.yaml"
+grep -Fq 'obfs=salamander&obfs-password=0123456789abcdef0123456789abcdef' "$CLIENT_LIST"
 
 echo 'Проверки пройдены.'
