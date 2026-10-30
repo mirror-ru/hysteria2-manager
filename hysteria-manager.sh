@@ -238,6 +238,20 @@ cleanup_firewall() {
     fi
 }
 
+find_expected_hash() {
+    local hashes_file="$1" asset_name="$2"
+    awk -v name="$asset_name" '
+        {
+            candidate = $NF
+            sub(/^.*\//, "", candidate)
+            if (candidate == name || candidate == "*" name) {
+                print $1
+                exit
+            }
+        }
+    ' "$hashes_file" | tr '[:upper:]' '[:lower:]'
+}
+
 download_verified_binary() {
     local output="$1" version="$2" asset="hysteria-linux-${ARCH}" hashes_tmp expected actual
     hashes_tmp=$(mktemp) || return 1
@@ -248,7 +262,7 @@ download_verified_binary() {
         rm -f "$hashes_tmp"
         return 1
     fi
-    expected=$(awk -v name="$asset" '$NF == name || $NF == "*" name { print $1; exit }' "$hashes_tmp" | tr '[:upper:]' '[:lower:]')
+    expected=$(find_expected_hash "$hashes_tmp" "$asset")
     rm -f "$hashes_tmp"
     [[ "$expected" =~ ^[A-Fa-f0-9]{64}$ ]] || return 1
     actual=$(sha256sum "$output" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')

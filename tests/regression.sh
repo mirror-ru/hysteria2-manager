@@ -26,6 +26,13 @@ if valid_range 50000-20000 || valid_range 1-65536; then
     exit 1
 fi
 
+cat > "$test_dir/hashes.txt" <<'EOF'
+ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789  build/hysteria-linux-amd64
+1111111111111111111111111111111111111111111111111111111111111111  *hysteria-linux-arm64
+EOF
+[[ "$(find_expected_hash "$test_dir/hashes.txt" hysteria-linux-amd64)" == "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" ]]
+[[ "$(find_expected_hash "$test_dir/hashes.txt" hysteria-linux-arm64)" == "1111111111111111111111111111111111111111111111111111111111111111" ]]
+
 printf 'alice|alice|abc|2||\nbob|bob|def|2||' > "$CLIENTS_DB"
 validate_client_db
 printf 'alice|alice|abc|2||\nbob|alice|def|2||\n' > "$CLIENTS_DB"
