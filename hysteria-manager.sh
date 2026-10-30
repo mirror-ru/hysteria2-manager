@@ -1154,7 +1154,7 @@ uninstall_hysteria() {
 }
 
 update_manager() {
-    local tmp_file backup_file snapshot_json snapshot_sha snapshot_date snapshot_date_local downloaded_at
+    local tmp_file backup_file snapshot_json snapshot_sha snapshot_date snapshot_date_local downloaded_at timezone_label
     if ! command -v curl >/dev/null 2>&1; then
         echo -e "${RED}Команда curl не найдена. Обновление менеджера невозможно.${NC}"
         return
@@ -1175,7 +1175,8 @@ update_manager() {
         echo -e "${RED}Сервер вернул пустой файл обновления.${NC}"
         return
     fi
-    downloaded_at=$(date '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || printf 'время недоступно')
+    timezone_label=$(date '+%Z (%z)' 2>/dev/null || printf 'локальная зона недоступна')
+    downloaded_at=$(date "+%Y-%m-%d %H:%M:%S %Z (%z)" 2>/dev/null || printf 'время недоступно')
     if snapshot_json=$(curl -q --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 15 --max-time 30 \
         -A 'hysteria-manager' "$MANAGER_COMMITS_API_URL"); then
         if command -v jq >/dev/null 2>&1; then
@@ -1184,7 +1185,7 @@ update_manager() {
         fi
     fi
     if [[ -n "$snapshot_sha" && -n "$snapshot_date" ]]; then
-        snapshot_date_local=$(date -d "$snapshot_date" '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || printf '%s' "$snapshot_date")
+        snapshot_date_local=$(date -d "$snapshot_date" '+%Y-%m-%d %H:%M:%S %Z (%z)' 2>/dev/null || printf '%s (локальная зона: %s)' "$snapshot_date" "$timezone_label")
         echo -e "${GREEN}Снимок скрипта: ${snapshot_date_local}, commit ${snapshot_sha:0:12}${NC}"
     else
         echo -e "${YELLOW}Снимок загружен: ${downloaded_at}; дату коммита получить не удалось.${NC}"
