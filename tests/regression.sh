@@ -22,6 +22,7 @@ mkdir -p "$CLIENTS_DIR" "$CLIENT_EXPORT_DIR"
 mkdir -p "$test_dir/bin"
 cat > "$test_dir/bin/qrencode" <<'EOF'
 #!/usr/bin/env bash
+printf '%s' "$*" > "${QR_CAPTURE}.args"
 cat > "$QR_CAPTURE"
 EOF
 chmod 755 "$test_dir/bin/qrencode"
@@ -30,6 +31,7 @@ export QR_CAPTURE
 PATH="$test_dir/bin:$PATH"
 print_qr 'hysteria2://alice:secret@example.com:443/?insecure=1#alice'
 [[ "$(< "$QR_CAPTURE")" == 'hysteria2://alice:secret@example.com:443/?insecure=1#alice' ]]
+grep -Fq -- '-t ANSI' "$QR_CAPTURE.args"
 
 valid_range 20000-50000
 valid_range 1-65535

@@ -881,7 +881,7 @@ print_qr() {
         echo -e "${RED}Не удалось показать QR: команда qrencode не найдена.${NC}" >&2
         return 1
     fi
-    if ! printf '%s' "$data" | qrencode -t ANSIUTF8; then
+    if ! printf '%s' "$data" | qrencode -t ANSI; then
         echo -e "${RED}Не удалось сгенерировать QR-код. Используйте ссылку ниже.${NC}" >&2
         return 1
     fi
