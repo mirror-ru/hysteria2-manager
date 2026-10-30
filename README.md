@@ -10,8 +10,6 @@ Bash-скрипт для установки и управления сервер
 curl -fsSLo hysteria-manager.sh https://raw.githubusercontent.com/mirror-ru/hysteria2-manager/main/hysteria-manager.sh && bash hysteria-manager.sh
 ```
 
-Скрипт сам устанавливает зависимости через `apt`, `dnf`, `yum` или `zypper`. На Arch Linux зависимости устанавливаются вручную по команде, которую выведет скрипт.
-
 Повторный запуск:
 
 ```bash
