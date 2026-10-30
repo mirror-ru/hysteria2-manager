@@ -630,26 +630,26 @@ ${YELLOW}Port hopping помогает обходить блокировку UDP
     elif [[ "$CERT_CHOICE" == "2" ]]; then
         CERT_TYPE="self"
         SERVER_ADDR=$SERVER_IP
-        read -p "Маскирующий SNI [bing.com]: " SNI
-        SNI=${SNI:-bing.com}
+        read -p "Маскирующий SNI [google.com]: " SNI
+        SNI=${SNI:-google.com}
         valid_host "$SNI" || die "Недопустимый SNI: $SNI"
         INSECURE_FLAG="true"
     else
         die "Недопустимый выбор сертификата"
     fi
 
-    read -p "Сайт для маскировки [bing.com]: " MASQ_DOMAIN
-    MASQ_DOMAIN=${MASQ_DOMAIN:-bing.com}
+    read -p "Сайт для маскировки [google.com]: " MASQ_DOMAIN
+    MASQ_DOMAIN=${MASQ_DOMAIN:-google.com}
     valid_host "$MASQ_DOMAIN" || die "Недопустимый домен маскировки: $MASQ_DOMAIN"
 
     echo -e "
 Обфускация (скрывает сигнатуру QUIC):"
     echo "1) Выключена (имитация обычного HTTP/3)"
-    echo "2) Salamander (случайно выглядящие байты)"
+    echo "2) Salamander (рекомендуется; случайно выглядящие байты)"
     echo "3) Gecko (случайные байты и размер пакетов)"
-    read -p "Выбор [1-3]: " OBFS_CHOICE
+    read -p "Выбор [1-3, Enter=2]: " OBFS_CHOICE
     case "$OBFS_CHOICE" in
-        2)
+        2|'')
             OBFS_ENABLED="true"
             OBFS_TYPE="salamander"
             OBFS_PASSWORD=$(random_secret) || die "Не удалось сгенерировать пароль обфускации"
