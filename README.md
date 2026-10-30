@@ -1,6 +1,6 @@
 # Hysteria 2 Manager
 
-Bash-скрипт для установки и управления сервером Hysteria 2 на Linux с IPv4.
+Bash-скрипт для установки и управления сервером Hysteria 2 на Linux
 
 ## Установка
 
