@@ -69,9 +69,12 @@ if valid_email admin@example || valid_email 'admin@example.c'; then
     exit 1
 fi
 valid_name client_01
+name32=$(printf 'a%.0s' {1..32})
+name33="${name32}a"
+valid_name "$name32"
 valid_server_addr example.com
 valid_server_addr 192.0.2.10
-if valid_name '-client' || valid_name 'client name' || valid_server_addr 999.0.2.10; then
+if valid_name '-client' || valid_name 'client name' || valid_name "$name33" || valid_server_addr 999.0.2.10; then
     echo 'Ошибка: неверное имя или адрес принят' >&2
     exit 1
 fi
@@ -90,6 +93,13 @@ grep -Fxq 'SNI=example.com' "$SETTINGS_FILE"
 [[ "$(read_setting PORT)" == '9443' ]]
 [[ "$(read_setting SNI)" == 'example.com' ]]
 [[ -z "$(read_setting UNKNOWN)" ]]
+settings_file_before_missing_test="$SETTINGS_FILE"
+SETTINGS_FILE="$test_dir/missing.conf"
+if read_setting PORT; then
+    echo 'Ошибка: чтение отсутствующего файла настроек не завершилось ошибкой' >&2
+    exit 1
+fi
+SETTINGS_FILE="$settings_file_before_missing_test"
 
 cat > "$test_dir/hashes.txt" <<'EOF'
 ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789  build/hysteria-linux-amd64
@@ -111,11 +121,17 @@ if validate_client_db 2>/dev/null; then
     echo 'Ошибка: пустой пароль принят' >&2
     exit 1
 fi
-printf 'true|true|123456|2||\n123|123|true|2||' > "$CLIENTS_DB"
+printf 'true|true|123456|2||\n\n123|123|true|2||' > "$CLIENTS_DB"
 validate_client_db
 write_userpass_entries > "$test_dir/auth.yaml"
 grep -Fxq '    "true": "123456"' "$test_dir/auth.yaml"
 grep -Fxq '    "123": "true"' "$test_dir/auth.yaml"
+[[ "$(grep -c '^    ' "$test_dir/auth.yaml")" == 2 ]]
+: > "$CLIENTS_DB"
+if validate_client_db 2>/dev/null; then
+    echo 'Ошибка: пустая база клиентов принята' >&2
+    exit 1
+fi
 
 PORT=443 SERVER_ADDR=example.com SNI=example.com INSECURE_FLAG=false
 HOP_RANGE='' OBFS_ENABLED=false
