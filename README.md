@@ -26,7 +26,7 @@ bash hysteria-manager.sh
 - генерация YAML-профилей, ссылок и QR-кодов;
 - port hopping: native, `iptables` или `nftables`;
 - обфускация Salamander и Gecko;
-- выбор Brutal, BBR или Reno;
+- BBR для новых клиентских профилей;
 - обновление ядра Hysteria с проверкой SHA-256;
 - безопасное удаление установки.
 

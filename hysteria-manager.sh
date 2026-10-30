@@ -811,29 +811,10 @@ ${BLUE}--- Добавление клиента ---${NC}"
         return
     fi
 
-    echo "Выберите алгоритм контроля перегрузки:"
-    echo "1) Brutal"
-    echo "2) BBR (рекомендуется; стандартный режим Hysteria 2)"
-    echo "3) Reno"
-    echo "0) Назад"
-    read -p "Выбор [1-3, Enter=2]: " CC_CHOICE
-    if [[ "$CC_CHOICE" == "0" ]]; then return; fi
-    CC_CHOICE=${CC_CHOICE:-2}
-    [[ "$CC_CHOICE" =~ ^[1-3]$ ]] || { echo -e "${RED}Недопустимый выбор алгоритма${NC}"; return; }
-
+    local CC_CHOICE=2
     CLIENT_USER="$CLIENT_NAME"
     CLIENT_PASSWORD=$(random_secret) || { echo -e "${RED}Не удалось сгенерировать пароль клиента${NC}" >&2; return; }
     local DOWN="" UP=""
-
-    case $CC_CHOICE in
-        1)
-            read -p "Скорость загрузки, Mbps [100]: " DOWN
-            read -p "Скорость отдачи, Mbps [20]: " UP
-            DOWN=${DOWN:-100}
-            UP=${UP:-20}
-            [[ "$DOWN" =~ ^[1-9][0-9]{0,5}$ && "$UP" =~ ^[1-9][0-9]{0,5}$ ]] || { echo -e "${RED}Значения скорости должны быть положительными числами${NC}"; return; }
-            ;;
-    esac
     local db_backup tmp_db
     db_backup=$(mktemp "${CLIENTS_DB}.backup.XXXXXX") || { echo -e "${RED}Не удалось создать резервную копию базы клиентов${NC}"; return; }
     cp -p "$CLIENTS_DB" "$db_backup" || { rm -f "$db_backup"; echo -e "${RED}Не удалось сохранить резервную копию базы клиентов${NC}"; return; }
