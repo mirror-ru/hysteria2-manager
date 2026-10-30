@@ -50,4 +50,3 @@ bash hysteria-manager.sh
 ```bash
 bash tests/regression.sh
 ```
-
